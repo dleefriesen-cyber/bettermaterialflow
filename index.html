@@ -118,6 +118,15 @@ nav img { height: 58px; width: auto; display: block; }
   line-height: 1.65;
 }
 
+/* ── CTA GROUP ── */
+.cta-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .btn-primary {
   display: inline-block;
   background: var(--red);
@@ -131,6 +140,42 @@ nav img { height: 58px; width: auto; display: block; }
   transition: background 0.15s, transform 0.1s;
 }
 .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); }
+
+.form-specialist-cta {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 8px;
+}
+.form-specialist-cta a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid #d1d5db;
+  transition: color 0.15s, border-color 0.15s;
+}
+.form-specialist-cta a:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.btn-ghost {
+  display: inline-block;
+  background: transparent;
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 15px 40px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.35);
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+  transform: translateY(-1px);
+}
 
 /* ── STAT STRIP ── */
 .stat-strip {
@@ -593,6 +638,8 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
   .stat-strip-item { padding: 18px 20px; min-width: 140px; }
   .hero { padding: 56px 20px 52px; }
   .guide-form-wrap { padding: 28px 24px; }
+  .cta-group { flex-direction: column; align-items: center; }
+  .btn-ghost { width: 100%; max-width: 320px; text-align: center; }
 }
 </style>
 </head>
@@ -606,7 +653,7 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
   <a href="index.html">
     <img src="colonial_saw_high_res.png" alt="Colonial Saw">
   </a>
-  <a href="#guide" class="nav-cta">Download the Workflow Guide</a>
+  <a href="#guide" class="nav-cta">Get the Guide</a>
 </nav>
 
 <!-- HERO -->
@@ -868,6 +915,7 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
           </div>
           <button type="submit" class="btn-submit">Download the Guide →</button>
           <p class="form-note">No spam. We respect your privacy.</p>
+          <p class="form-specialist-cta">Already know what you need? <a href="/hot-lead.html">Talk to a specialist →</a></p>
         </form>
       </div>
 
@@ -893,10 +941,8 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
 </footer>
 
 <script>
-  // ── Google Sheets endpoint (5 Workflows guide)
   const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyJTeSuTBVvnGaheNgfCAeO88VIrDWuFAvxSCwFXeE3Z-tgWYsC0FPcDAh-GFonwok/exec';
 
-  // ── Capture UTM parameters from URL
   function getUTM() {
     const p = new URLSearchParams(window.location.search);
     return {
@@ -939,21 +985,15 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
     })
     .catch(() => {})
     .finally(() => {
-      // Show success state
       document.getElementById('form-wrap').style.display = 'none';
       document.getElementById('form-success').style.display = 'block';
 
-      // ── Google Ads conversion — replace values with your account
       if (typeof gtag !== 'undefined') {
         gtag('event', 'conversion', {
-          send_to: 'AW-XXXXXXXXX/CONVERSION_LABEL',
+          send_to: 'AW-18165996338/zQYoCJ_yyq4cELK2nNZD',
           value: 1.0,
           currency: 'USD'
         });
-      }
-
-      // ── GA4 lead event
-      if (typeof gtag !== 'undefined') {
         gtag('event', 'generate_lead', {
           event_category: 'form',
           event_label: 'workflow_guide'

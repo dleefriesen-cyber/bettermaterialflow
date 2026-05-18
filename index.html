@@ -893,11 +893,11 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
           </div>
           <div class="field">
             <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" placeholder="you@yourshop.com" required>
+            <input type="email" id="email" name="email" placeholder="you@yourshop.com" required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}">
           </div>
           <div class="field">
             <label for="phone">Phone</label>
-            <input type="tel" id="phone" name="phone" placeholder="(555) 000-0000" required>
+            <input type="tel" id="phone" name="phone" placeholder="(555) 000-0000" required pattern="[\+]?[\s\.\-\(\)]?[\d][\s\.\-\(\)\d]{8,}[\d]">
           </div>
           <div class="field">
             <label for="currentEquipment">What do you cut with now? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">— optional</span></label>
@@ -984,8 +984,19 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
     const sheetsPerDay = document.getElementById('sheetsPerDay').value;
     const decisionTimeline = document.getElementById('decisionTimeline').value;
 
+    const emailValid = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email);
+    const phoneValid = /^[\+]?[\s.\-()]?[\d][\s.\-()\d]{8,}[\d]$/.test(phone.replace(/\s/g,''));
+
     if (!name || !company || !email || !phone) {
       alert('Please fill in your name, company, email, and phone.');
+      return;
+    }
+    if (!emailValid) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+    if (!phoneValid) {
+      alert('Please enter a valid phone number.');
       return;
     }
 

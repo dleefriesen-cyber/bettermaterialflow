@@ -991,8 +991,6 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
 
     fetch(SHEET_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
     .catch(() => {})

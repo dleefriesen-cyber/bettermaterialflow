@@ -20,7 +20,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-api-key'],
 }));
 app.use(express.json());
-app.use(express.static('public'));
+// Note: express.static is registered AFTER dynamic routes to avoid intercepting /widget.js
 
 // ─────────────────────────────────────────────
 // SYSTEM PROMPT (cached — same for every user)
@@ -183,7 +183,7 @@ app.get('/widget.js', (req, res) => {
   const fs = require('fs');
   const path = require('path');
 
-  const widgetSrc = fs.readFileSync(path.join(__dirname, 'public/widget.js'), 'utf8');
+  const widgetSrc = fs.readFileSync(path.join(__dirname, 'public/widget.src.js'), 'utf8');
 
   // Inject dealer ID and API base URL into the widget
   const injected = widgetSrc
@@ -199,6 +199,9 @@ app.get('/widget.js', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Static files (dashboard, test page) — registered last so /widget.js dynamic route wins
+app.use(require('express').static('public'));
 
 // Initialize DB then start server
 db.initDB().then(() => {

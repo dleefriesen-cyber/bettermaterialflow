@@ -1,169 +1,158 @@
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
+const fs = require('fs');
 const path = require('path');
 
-// Use /tmp in production (Railway containers) or local __dirname in dev
+// Use /tmp in production (Railway) or local dir in dev
 const dbPath = process.env.NODE_ENV === 'production'
   ? '/tmp/analytics.db'
   : path.join(__dirname, 'analytics.db');
-const db = new Database(dbPath);
 
-// Initialize tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS feedback (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id TEXT NOT NULL,
-    dealer_id TEXT NOT NULL,
-    connector_recommended TEXT,
-    rating INTEGER NOT NULL, -- 1 = thumbs up, -1 = thumbs down
-    conversation TEXT,       -- full JSON of the conversation
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+let db;
+let SQL;
 
-  CREATE TABLE IF NOT EXISTS sessions (
-    id TEXT PRIMARY KEY,
-    dealer_id TEXT NOT NULL,
-    dealer_domain TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    completed INTEGER DEFAULT 0,
-    connector_recommended TEXT,
-    user_agent TEXT
-  );
+async function initDB() {
+  SQL = await initSqlJs();
 
-  CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id TEXT NOT NULL,
-    dealer_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
-    event_data TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  // Load existing DB file if it exists
+  if (fs.existsSync(dbPath)) {
+    const fileBuffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(fileBuffer);
+  } else {
+    db = new SQL.Database();
+  }
 
-  CREATE TABLE IF NOT EXISTS dealers (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    domain TEXT,
-    api_key TEXT UNIQUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-`);
+  // Initialize tables
+  db.run(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      dealer_id TEXT NOT NULL,
+      connector_recommended TEXT,
+      rating INTEGER NOT NULL,
+      conversation TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 
-// Seed a demo dealer if none exist
-const existingDealers = db.prepare('SELECT COUNT(*) as count FROM dealers').get();
-if (existingDealers.count === 0) {
-  db.prepare(`
-    INSERT INTO dealers (id, name, domain, api_key)
-    VALUES ('demo', 'Demo Dealer', 'localhost', 'demo-key-12345')
-  `).run();
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      dealer_id TEXT NOT NULL,
+      dealer_domain TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed INTEGER DEFAULT 0,
+      connector_recommended TEXT,
+      user_agent TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      dealer_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      event_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS dealers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      domain TEXT,
+      api_key TEXT UNIQUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Seed demo dealer if none exist
+  const result = db.exec('SELECT COUNT(*) as count FROM dealers');
+  const count = result[0]?.values[0][0] || 0;
+  if (count === 0) {
+    db.run(`INSERT INTO dealers (id, name, domain, api_key) VALUES ('demo', 'Demo Dealer', 'localhost', 'demo-key-12345')`);
+  }
+
+  persist();
+  console.log('Database initialized at', dbPath);
+}
+
+// Save DB to disk after writes
+function persist() {
+  const data = db.export();
+  fs.writeFileSync(dbPath, Buffer.from(data));
+}
+
+// Helper: run a query and return all rows as objects
+function all(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const rows = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return rows;
+}
+
+// Helper: run a query and return first row
+function get(sql, params = []) {
+  return all(sql, params)[0] || null;
+}
+
+// Helper: run a write query
+function run(sql, params = []) {
+  db.run(sql, params);
+  persist();
 }
 
 module.exports = {
-  // Track a new session start
+  initDB,
+
   createSession(sessionId, dealerId, dealerDomain, userAgent) {
-    return db.prepare(`
-      INSERT OR IGNORE INTO sessions (id, dealer_id, dealer_domain, user_agent)
-      VALUES (?, ?, ?, ?)
-    `).run(sessionId, dealerId, dealerDomain, userAgent);
+    run(`INSERT OR IGNORE INTO sessions (id, dealer_id, dealer_domain, user_agent) VALUES (?, ?, ?, ?)`,
+      [sessionId, dealerId, dealerDomain, userAgent]);
   },
 
-  // Log an event (message sent, connector recommended, etc.)
   logEvent(sessionId, dealerId, eventType, eventData) {
-    return db.prepare(`
-      INSERT INTO events (session_id, dealer_id, event_type, event_data)
-      VALUES (?, ?, ?, ?)
-    `).run(sessionId, dealerId, eventType, JSON.stringify(eventData));
+    run(`INSERT INTO events (session_id, dealer_id, event_type, event_data) VALUES (?, ?, ?, ?)`,
+      [sessionId, dealerId, eventType, JSON.stringify(eventData)]);
   },
 
-  // Mark session complete with recommendation
   completeSession(sessionId, connectorRecommended) {
-    return db.prepare(`
-      UPDATE sessions SET completed = 1, connector_recommended = ?
-      WHERE id = ?
-    `).run(connectorRecommended, sessionId);
+    run(`UPDATE sessions SET completed = 1, connector_recommended = ? WHERE id = ?`,
+      [connectorRecommended, sessionId]);
   },
 
-  // Analytics: summary for a dealer
   getDealerStats(dealerId) {
-    const total = db.prepare('SELECT COUNT(*) as count FROM sessions WHERE dealer_id = ?').get(dealerId);
-    const completed = db.prepare('SELECT COUNT(*) as count FROM sessions WHERE dealer_id = ? AND completed = 1').get(dealerId);
-    const topConnectors = db.prepare(`
-      SELECT connector_recommended, COUNT(*) as count
-      FROM sessions
-      WHERE dealer_id = ? AND connector_recommended IS NOT NULL
-      GROUP BY connector_recommended
-      ORDER BY count DESC
-      LIMIT 5
-    `).all(dealerId);
-    const recentSessions = db.prepare(`
-      SELECT * FROM sessions WHERE dealer_id = ?
-      ORDER BY created_at DESC LIMIT 20
-    `).all(dealerId);
-    const daily = db.prepare(`
-      SELECT DATE(created_at) as date, COUNT(*) as sessions
-      FROM sessions WHERE dealer_id = ?
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC LIMIT 30
-    `).all(dealerId);
-
-    return { total: total.count, completed: completed.count, topConnectors, recentSessions, daily };
+    const total = get('SELECT COUNT(*) as count FROM sessions WHERE dealer_id = ?', [dealerId])?.count || 0;
+    const completed = get('SELECT COUNT(*) as count FROM sessions WHERE dealer_id = ? AND completed = 1', [dealerId])?.count || 0;
+    const topConnectors = all(`SELECT connector_recommended, COUNT(*) as count FROM sessions WHERE dealer_id = ? AND connector_recommended IS NOT NULL GROUP BY connector_recommended ORDER BY count DESC LIMIT 5`, [dealerId]);
+    const recentSessions = all(`SELECT * FROM sessions WHERE dealer_id = ? ORDER BY created_at DESC LIMIT 20`, [dealerId]);
+    const daily = all(`SELECT DATE(created_at) as date, COUNT(*) as sessions FROM sessions WHERE dealer_id = ? GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 30`, [dealerId]);
+    return { total, completed, topConnectors, recentSessions, daily };
   },
 
-  // Analytics: global summary (for Lamello HQ view)
   getGlobalStats() {
-    const byDealer = db.prepare(`
-      SELECT d.name, s.dealer_id, COUNT(*) as sessions,
-             SUM(s.completed) as completed
-      FROM sessions s
-      LEFT JOIN dealers d ON d.id = s.dealer_id
-      GROUP BY s.dealer_id
-      ORDER BY sessions DESC
-    `).all();
-    const topConnectors = db.prepare(`
-      SELECT connector_recommended, COUNT(*) as count
-      FROM sessions WHERE connector_recommended IS NOT NULL
-      GROUP BY connector_recommended
-      ORDER BY count DESC
-    `).all();
-    const totalSessions = db.prepare('SELECT COUNT(*) as count FROM sessions').get();
-    return { byDealer, topConnectors, totalSessions: totalSessions.count };
+    const byDealer = all(`SELECT d.name, s.dealer_id, COUNT(*) as sessions, SUM(s.completed) as completed FROM sessions s LEFT JOIN dealers d ON d.id = s.dealer_id GROUP BY s.dealer_id ORDER BY sessions DESC`);
+    const topConnectors = all(`SELECT connector_recommended, COUNT(*) as count FROM sessions WHERE connector_recommended IS NOT NULL GROUP BY connector_recommended ORDER BY count DESC`);
+    const totalSessions = get('SELECT COUNT(*) as count FROM sessions')?.count || 0;
+    return { byDealer, topConnectors, totalSessions };
   },
 
-  // Validate dealer API key
   getDealerByKey(apiKey) {
-    return db.prepare('SELECT * FROM dealers WHERE api_key = ?').get(apiKey);
+    return get('SELECT * FROM dealers WHERE api_key = ?', [apiKey]);
   },
 
   getAllDealers() {
-    return db.prepare('SELECT * FROM dealers').all();
+    return all('SELECT * FROM dealers');
   },
 
-  // Save user feedback (👍/👎) with full conversation
   saveFeedback(sessionId, dealerId, connectorRecommended, rating, conversation) {
-    return db.prepare(`
-      INSERT INTO feedback (session_id, dealer_id, connector_recommended, rating, conversation)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(sessionId, dealerId, connectorRecommended, rating, JSON.stringify(conversation));
+    run(`INSERT INTO feedback (session_id, dealer_id, connector_recommended, rating, conversation) VALUES (?, ?, ?, ?, ?)`,
+      [sessionId, dealerId, connectorRecommended, rating, JSON.stringify(conversation)]);
   },
 
-  // Get all feedback for a dealer, newest first
   getFeedback(dealerId) {
-    return db.prepare(`
-      SELECT * FROM feedback WHERE dealer_id = ?
-      ORDER BY created_at DESC LIMIT 100
-    `).all(dealerId);
+    return all(`SELECT * FROM feedback WHERE dealer_id = ? ORDER BY created_at DESC LIMIT 100`, [dealerId]);
   },
 
-  // Feedback summary: thumbs up/down counts per connector
   getFeedbackSummary(dealerId) {
-    return db.prepare(`
-      SELECT
-        connector_recommended,
-        SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as thumbs_up,
-        SUM(CASE WHEN rating = -1 THEN 1 ELSE 0 END) as thumbs_down,
-        COUNT(*) as total
-      FROM feedback
-      WHERE dealer_id = ?
-      GROUP BY connector_recommended
-      ORDER BY total DESC
-    `).all(dealerId);
+    return all(`SELECT connector_recommended, SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as thumbs_up, SUM(CASE WHEN rating = -1 THEN 1 ELSE 0 END) as thumbs_down, COUNT(*) as total FROM feedback WHERE dealer_id = ? GROUP BY connector_recommended ORDER BY total DESC`, [dealerId]);
   }
 };

@@ -14,7 +14,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow all origins (widget embeds on any dealer site)
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'x-api-key'],
+}));
 app.use(express.json());
 app.use(express.static('public'));
 

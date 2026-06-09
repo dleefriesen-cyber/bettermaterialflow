@@ -1,7 +1,11 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const db = new Database(path.join(__dirname, 'analytics.db'));
+// Use /tmp in production (Railway containers) or local __dirname in dev
+const dbPath = process.env.NODE_ENV === 'production'
+  ? '/tmp/analytics.db'
+  : path.join(__dirname, 'analytics.db');
+const db = new Database(dbPath);
 
 // Initialize tables
 db.exec(`

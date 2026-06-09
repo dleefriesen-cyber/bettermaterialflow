@@ -196,9 +196,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🔌 Lamello Widget API running on http://localhost:${PORT}`);
-  console.log(`📊 Analytics dashboard: http://localhost:${PORT}/dashboard`);
-  console.log(`\nDemo embed code:`);
-  console.log(`  <script src="http://localhost:${PORT}/widget.js?id=demo"></script>\n`);
+// Initialize DB then start server
+db.initDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🔌 Lamello Widget API running on http://localhost:${PORT}`);
+    console.log(`📊 Analytics dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`\nDemo embed code:`);
+    console.log(`  <script src="http://localhost:${PORT}/widget.js?id=demo"></script>\n`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
 });

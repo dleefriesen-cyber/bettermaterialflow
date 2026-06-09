@@ -11,11 +11,11 @@ Lamello produces three distinct connector systems. Understanding which system a 
 
 | System | Groove / Hole Required | Installation Tools |
 |---|---|---|
-| P-System | 7 mm proprietary P-System groove | Zeta P2 joiner (corded/cordless) or CNC |
+| P-System | P-System groove (7 mm kerf cutter, 9.8 mm final slot) | Zeta P2 joiner (corded/cordless) or CNC |
 | Lamello System | 4 mm standard biscuit groove | Any Lamello biscuit joiner (Classic X, Top 21, Zeta P2) |
 | Drilling System | Drilled pocket only — NO groove needed | CNC or hand drill with jig |
 
-IMPORTANT: All P-System connectors share the same 7 mm groove — one setup covers all P-System products.
+IMPORTANT: All P-System connectors share the same groove profile (7 mm kerf, 9.8 mm final slot) — one cutter setup covers all P-System products.
 
 ---
 

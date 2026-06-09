@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: false }); // Railway env vars take precedence
 const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
@@ -200,6 +200,7 @@ app.get('/health', (req, res) => {
 db.initDB().then(() => {
   app.listen(PORT, () => {
     console.log(`\n🔌 Lamello Widget API running on http://localhost:${PORT}`);
+    console.log(`🔑 Anthropic API key: ${process.env.ANTHROPIC_API_KEY ? 'SET ✅' : 'MISSING ❌'}`);
     console.log(`📊 Analytics dashboard: http://localhost:${PORT}/dashboard`);
     console.log(`\nDemo embed code:`);
     console.log(`  <script src="http://localhost:${PORT}/widget.js?id=demo"></script>\n`);

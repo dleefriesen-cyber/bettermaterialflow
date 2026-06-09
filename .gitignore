@@ -1,0 +1,9 @@
+node_modules/
+backend/node_modules/
+backend/.env
+backend/analytics.db
+*.db
+pdf-extract.txt
+extract-pdf.js
+package-lock.json
+backend/package-lock.json

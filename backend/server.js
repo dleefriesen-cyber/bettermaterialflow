@@ -179,7 +179,7 @@ app.get('/widget.js', (req, res) => {
   const fs = require('fs');
   const path = require('path');
 
-  const widgetSrc = fs.readFileSync(path.join(__dirname, '../widget/widget.js'), 'utf8');
+  const widgetSrc = fs.readFileSync(path.join(__dirname, 'public/widget.js'), 'utf8');
 
   // Inject dealer ID and API base URL into the widget
   const injected = widgetSrc

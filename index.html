@@ -20,6 +20,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 
 <link rel="stylesheet" href="/css/main.css">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -268,19 +269,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <form id="lead-form" onsubmit="handleSubmit(event)" novalidate>
           <div class="field">
             <label for="name">Full Name</label>
-            <input type="text" id="name" name="name" placeholder="John Smith" required>
+            <input type="text" id="name" name="name" placeholder="John Smith" required autocomplete="name">
           </div>
           <div class="field">
             <label for="company">Company Name</label>
-            <input type="text" id="company" name="company" placeholder="Your shop" required>
+            <input type="text" id="company" name="company" placeholder="Your shop" required autocomplete="organization">
           </div>
           <div class="field">
             <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" placeholder="you@yourshop.com" required pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}">
+            <input type="email" id="email" name="email" placeholder="you@yourshop.com" required autocomplete="email" inputmode="email">
           </div>
           <div class="field">
             <label for="phone">Phone</label>
-            <input type="tel" id="phone" name="phone" placeholder="(555) 000-0000" required pattern="[\+]?[\s\.\-\(\)]?[\d][\s\.\-\(\)\d]{8,}[\d]">
+            <input type="tel" id="phone" name="phone" placeholder="(555) 000-0000" required autocomplete="tel" inputmode="tel">
           </div>
           <div class="field">
             <label for="currentEquipment">What do you cut with now? <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">— optional</span></label>
@@ -316,6 +317,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               <option value="Just researching">Just researching</option>
             </select>
           </div>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAADlZQb81n1V5tNpK" data-theme="light" style="margin-bottom:10px;"></div>
           <button type="submit" class="btn-submit">Request a Demo →</button>
           <p class="form-note">No spam. We respect your privacy.</p>
         </form>

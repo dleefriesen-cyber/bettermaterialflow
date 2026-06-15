@@ -30,6 +30,30 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: 'Server configuration error' }) };
   }
 
+  // Verify Turnstile token
+  const turnstileToken = String(payload['cf-turnstile-response'] || '');
+  if (!turnstileToken) {
+    return { statusCode: 403, body: JSON.stringify({ error: 'Security check required' }) };
+  }
+  try {
+    const verify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: turnstileToken,
+        remoteip: event.headers['x-forwarded-for'] || ''
+      })
+    });
+    const result = await verify.json();
+    if (!result.success) {
+      return { statusCode: 403, body: JSON.stringify({ error: 'Bot check failed' }) };
+    }
+  } catch (err) {
+    console.error('Turnstile verification failed:', err);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Security check error' }) };
+  }
+
   const sanitized = {
     name,
     email,

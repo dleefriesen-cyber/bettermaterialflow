@@ -1,6 +1,26 @@
 window.dataLayer = window.dataLayer || [];
 function gtag(){ dataLayer.push(arguments); }
 
+// Live US phone formatter: (555) 000-0000
+document.addEventListener('DOMContentLoaded', function() {
+  var phoneInput = document.getElementById('phone');
+  if (!phoneInput) return;
+  phoneInput.addEventListener('input', function(e) {
+    var digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    var formatted = '';
+    if (digits.length === 0) {
+      formatted = '';
+    } else if (digits.length <= 3) {
+      formatted = '(' + digits;
+    } else if (digits.length <= 6) {
+      formatted = '(' + digits.slice(0,3) + ') ' + digits.slice(3);
+    } else {
+      formatted = '(' + digits.slice(0,3) + ') ' + digits.slice(3,6) + '-' + digits.slice(6);
+    }
+    e.target.value = formatted;
+  });
+});
+
 function getUTM() {
   var p = new URLSearchParams(window.location.search);
   return {
@@ -22,9 +42,10 @@ function handleSubmit(e) {
   var currentEquipment = document.getElementById('currentEquipment').value;
   var sheetsPerDay = document.getElementById('sheetsPerDay').value;
   var decisionTimeline = document.getElementById('decisionTimeline').value;
+  var turnstileToken = (document.querySelector('[name="cf-turnstile-response"]') || {}).value || '';
 
   var emailValid = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email);
-  var phoneValid = /^[\+]?[\s.\-()]?[\d][\s.\-()\d]{8,}[\d]$/.test(phone.replace(/\s/g,''));
+  var phoneDigits = phone.replace(/\D/g, '');
 
   if (!name || !company || !email || !phone) {
     alert('Please fill in your name, company, email, and phone.');
@@ -34,8 +55,12 @@ function handleSubmit(e) {
     alert('Please enter a valid email address.');
     return;
   }
-  if (!phoneValid) {
-    alert('Please enter a valid phone number.');
+  if (phoneDigits.length < 10) {
+    alert('Please enter a valid 10-digit phone number.');
+    return;
+  }
+  if (!turnstileToken) {
+    alert('Please wait for the security check to complete.');
     return;
   }
 
@@ -49,7 +74,8 @@ function handleSubmit(e) {
     sheetsPerDay: sheetsPerDay,
     decisionTimeline: decisionTimeline,
     page: window.location.href,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    'cf-turnstile-response': turnstileToken
   }, getUTM());
 
   fetch('/api/submit-lead', {
@@ -77,6 +103,7 @@ function handleSubmit(e) {
   .catch(function() {
     btn.textContent = 'Request a Demo →';
     btn.disabled = false;
+    if (window.turnstile) window.turnstile.reset();
     alert('Something went wrong. Please try again or call us directly.');
   });
 }

@@ -48,12 +48,24 @@ exports.handler = async (event) => {
     utm_content:      String(payload.utm_content      || '').slice(0, 100),
   };
 
+  // GAS web apps issue a 302 redirect on POST; follow it manually so the
+  // body is re-sent as POST instead of being dropped as a GET.
   try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sanitized),
-    });
+    let url = GAS_URL;
+    for (let i = 0; i < 5; i++) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sanitized),
+        redirect: 'manual',
+      });
+      if (res.status >= 300 && res.status < 400) {
+        url = res.headers.get('location');
+        if (!url) break;
+        continue;
+      }
+      break;
+    }
   } catch (err) {
     console.error('GAS forwarding failed:', err);
     return { statusCode: 502, body: JSON.stringify({ error: 'Failed to save submission' }) };

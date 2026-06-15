@@ -3,6 +3,9 @@ function gtag(){ dataLayer.push(arguments); }
 
 // Live US phone formatter: (555) 000-0000
 document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('lead-form');
+  if (form) form.addEventListener('submit', handleSubmit);
+
   var phoneInput = document.getElementById('phone');
   if (!phoneInput) return;
   phoneInput.addEventListener('input', function(e) {

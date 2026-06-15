@@ -14,12 +14,13 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid request' }) };
   }
 
-  const name  = String(payload.name  || '').trim().slice(0, 200);
-  const email = String(payload.email || '').trim().slice(0, 200);
-  const phone = String(payload.phone || '').trim().slice(0, 50);
+  const name    = String(payload.name    || '').trim().slice(0, 200);
+  const email   = String(payload.email   || '').trim().slice(0, 200);
+  const phone   = String(payload.phone   || '').trim().slice(0, 50);
+  const company = String(payload.company || '').trim().slice(0, 200);
 
-  if (!name || !email) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Name and email are required' }) };
+  if (!name || !company || !email || !phone) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Name, company, email, and phone are required' }) };
   }
   if (!EMAIL_RE.test(email)) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid email address' }) };

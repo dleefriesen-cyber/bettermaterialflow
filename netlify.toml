@@ -1,5 +1,24 @@
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/submit-lead"
+  to = "/.netlify/functions/submit-lead"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/guide"
   to = "https://drive.google.com/uc?export=download&id=1AqtfgEwKfPY4vbB7AUfDqUHB3CGiG706"
   status = 301
   force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://img.youtube.com data:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; frame-src https://www.googletagmanager.com; object-src 'none'; base-uri 'self'"

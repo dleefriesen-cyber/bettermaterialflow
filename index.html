@@ -965,8 +965,6 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
 </footer>
 
 <script>
-  const SHEET_URL = '[REDACTED]';
-
   function getUTM() {
     const p = new URLSearchParams(window.location.search);
     return {
@@ -1017,12 +1015,13 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
       ...getUTM()
     };
 
-    fetch(SHEET_URL, {
+    fetch('/api/submit-lead', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    .catch(() => {})
-    .finally(() => {
+    .then((res) => {
+      if (!res.ok) throw new Error('Server error');
       document.getElementById('form-wrap').style.display = 'none';
       document.getElementById('form-success').style.display = 'block';
 
@@ -1037,12 +1036,14 @@ footer p { font-size: 12px; color: rgba(255,255,255,0.35); }
           event_label: 'demo_request'
         });
       }
+    })
+    .catch(() => {
+      btn.textContent = 'Request a Demo →';
+      btn.disabled = false;
+      alert('Something went wrong. Please try again or call us directly.');
     });
   }
 </script>
-
-<!-- Lamello Connector Selector Widget -->
-<script src="https://bettermaterialflow-production.up.railway.app/widget.js?id=bettermaterialflow"></script>
 
 </body>
 </html>

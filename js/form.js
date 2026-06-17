@@ -1,6 +1,18 @@
 window.dataLayer = window.dataLayer || [];
 function gtag(){ dataLayer.push(arguments); }
 
+// Smooth scroll anchor links without updating the URL hash
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('a[href^="#"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var target = document.querySelector(link.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+});
+
 // Click-to-play YouTube embeds
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.t-thumb').forEach(function(link) {

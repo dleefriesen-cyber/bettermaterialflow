@@ -1,6 +1,27 @@
 window.dataLayer = window.dataLayer || [];
 function gtag(){ dataLayer.push(arguments); }
 
+// Click-to-play YouTube embeds
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.t-thumb').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var url = link.href;
+      var match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+      if (!match) return;
+      var id = match[1];
+      var iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+      iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+      iframe.allowFullscreen = true;
+      iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+      Array.from(link.children).forEach(function(c) { c.style.display = 'none'; });
+      link.style.pointerEvents = 'none';
+      link.appendChild(iframe);
+    });
+  });
+});
+
 // Live US phone formatter: (555) 000-0000
 document.addEventListener('DOMContentLoaded', function() {
   var form = document.getElementById('lead-form');
